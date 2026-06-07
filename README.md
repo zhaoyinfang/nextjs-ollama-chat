@@ -80,6 +80,10 @@ command: ollama pull llama3.2
 # 3. start Ollama-Dienst # Auf Linux (Ubuntu):
 command: sudo systemctl start ollama
 
-# 4 start nextjs
+#4: update vektoren.json, if fakten.json is changed. Before the Embedding-Modell should be downloaded with ollama pull nomic-embed-text
+command: ollama pull nomic-embed-text (only once)
+command: npx tsx scripts/embed.ts
+
+# 5 start nextjs
 command: npm run dev
 ```
