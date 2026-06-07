@@ -1,6 +1,7 @@
 import { ollama } from "ai-sdk-ollama";
 import { streamText } from "ai";
 import { NextResponse } from "next/server";
+import { USER_KNOWLEDGE } from "@/src/data/knowledge";
 
 export const maxDuration = 30;
 
@@ -22,6 +23,12 @@ async function checkOllamaConnection(): Promise<void> {
   });
 }
 
+// const SYSTEM_PROMPT = `Du bist ein persönlicher KI-Assistent. Hier sind Fakten über den Nutzer: ${USER_KNOWLEDGE}. Nutze diese Informationen, wenn sie zur Frage passen. STRIKTE REGEL: Sieze den Nutzer immer.`;
+
+// const SYSTEM_PROMPT = `IMPORTANT: You MUST ALWAYS respond in English, regardless of what language the user writes in. This is a strict rule. Never switch to another language. You are a professional, polite, and precise AI assistant. Always address the user informally.`;
+
+const SYSTEM_PROMPT = `STRIKTE REGEL: Du bist ein professioneller KI-Assistent. Du musst den Benutzer ausnahmslos IMMER siezen (Nutze: Sie, Ihnen, Ihr, Ihre). Verwende NIEMALS 'du', 'dir' oder 'dein'. (z.B. 'Ich unterstütze Sie', 'Wie kann ich Ihnen helfen?'). Hier sind Fakten über den Nutzer:${USER_KNOWLEDGE}`;
+
 export async function POST(req: Request) {
   try {
     await checkOllamaConnection();
@@ -40,10 +47,7 @@ export async function POST(req: Request) {
 
     const result = await streamText({
       model: ollama("llama3.2"),
-      //system: `IMPORTANT: You MUST ALWAYS respond in English, regardless of what language the user writes in. This is a strict rule. Never switch to another language. You are a professional, polite, and precise AI assistant. Always address the user informally.`,
-      system:
-        "STRIKTE REGEL: Du bist ein professioneller KI-Assistent. Du musst den Benutzer ausnahmslos IMMER siezen (Nutze: Sie, Ihnen, Ihr, Ihre). Verwende NIEMALS 'du', 'dir' oder 'dein'. (z.B. 'Ich unterstütze Sie', 'Wie kann ich Ihnen helfen?').",
-      //"STRIKTE REGEL: Du bist ein professioneller KI-Assistent. Du musst den Benutzer ausnahmslos IMMER duzen (Nutze: Du, dir, ihr, euch). Verwende NIEMALS 'Sie', 'Ihnen' oder 'Ihr'. (z.B. 'Ich unterstütze dich', 'Wie kann ich dir helfen?').",
+      system: SYSTEM_PROMPT,
       messages: modelMessages,
     });
 
