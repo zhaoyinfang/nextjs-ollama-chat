@@ -3,15 +3,26 @@ import { streamText } from "ai";
 
 export const maxDuration = 30;
 
+interface MessagePart {
+  type: string;
+  text?: string;
+}
+
+interface IncomingMessage {
+  role: "user" | "assistant" | "system";
+  parts?: MessagePart[];
+  content?: string;
+}
+
 export async function POST(req: Request) {
   const { messages } = await req.json();
 
-  const modelMessages = messages.map((m: any) => ({
+  const modelMessages = messages.map((m: IncomingMessage) => ({
     role: m.role,
     content: Array.isArray(m.parts)
       ? m.parts
-          .filter((p: any) => p.type === "text")
-          .map((p: any) => p.text)
+          .filter((p) => p.type === "text")
+          .map((p) => p.text)
           .join("")
       : (m.content ?? ""),
   }));
