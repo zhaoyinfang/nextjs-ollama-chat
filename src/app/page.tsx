@@ -19,6 +19,8 @@ import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 export default function ChatSchnittstelle() {
   const { messages, sendMessage, status } = useChat();
   const [input, setInput] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadHinweis, setUploadHinweis] = useState<string | null>(null);
 
   const isChatLoading = status === "submitted" || status === "streaming";
 
@@ -34,12 +36,40 @@ export default function ChatSchnittstelle() {
     setInput("");
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = event.target.files?.[0];
-    if (file) {
-      alert(
-        `Datei "${file.name}" ausgewählt! Bereit für den nächsten RAG-Schritt.`,
+    if (!file) return;
+
+    setIsUploading(true);
+    setUploadHinweis(`"${file.name}" wird verarbeitet ...`);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setUploadHinweis(`Fehler: ${data.error ?? "Unbekannter Fehler"}`);
+        return;
+      }
+
+      setUploadHinweis(
+        `"${data.originalName}" wurde gespeichert (${(data.groesseInBytes / 1024).toFixed(1)} KB).`,
       );
+    } catch {
+      setUploadHinweis("Fehler: Upload konnte nicht gesendet werden.");
+    } finally {
+      setIsUploading(false);
+      // Input zurücksetzen, damit dieselbe Datei erneut hochgeladen werden kann
+      event.target.value = "";
     }
   };
 
@@ -155,6 +185,19 @@ export default function ChatSchnittstelle() {
         </List>
       </Paper>
 
+      {/* Upload-Hinweis */}
+      {uploadHinweis && (
+        <Box sx={{ mb: 1.5 }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ fontStyle: "italic" }}
+          >
+            {uploadHinweis}
+          </Typography>
+        </Box>
+      )}
+
       {/* Eingabe- und Upload-Leiste */}
       <Box
         component="form"
@@ -166,7 +209,14 @@ export default function ChatSchnittstelle() {
           component="label"
           variant="outlined"
           color="primary"
-          startIcon={<CloudUploadIcon />}
+          disabled={isUploading}
+          startIcon={
+            isUploading ? (
+              <CircularProgress size={18} color="inherit" />
+            ) : (
+              <CloudUploadIcon />
+            )
+          }
           sx={{
             height: "56px",
             px: 2,
@@ -176,7 +226,13 @@ export default function ChatSchnittstelle() {
           }}
         >
           PDF
-          <input type="file" accept=".pdf" hidden onChange={handleFileUpload} />
+          <input
+            type="file"
+            accept=".pdf"
+            hidden
+            onChange={handleFileUpload}
+            disabled={isUploading}
+          />
         </Button>
 
         {/* Chat Textfeld */}
