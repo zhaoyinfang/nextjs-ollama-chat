@@ -41,11 +41,31 @@ export async function POST(req: Request) {
     fs.writeFileSync(speicherPfad, buffer);
     console.log(`[Upload] PDF dauerhaft gespeichert: ${speicherPfad}`);
 
+    // Text aus dem PDF extrahieren (pdf-parse v2 nutzt eine Klasse statt Funktion)
+    const { PDFParse } = await import("pdf-parse");
+    const parser = new PDFParse({ data: buffer });
+    const pdfDaten = await parser.getText();
+    const extrahierterText = pdfDaten.text;
+
+    console.log(`[Upload] Text extrahiert: ${extrahierterText.length} Zeichen`);
+    console.log(`[Upload] Vorschau: "${extrahierterText.slice(0, 200)}..."`);
+
+    if (!extrahierterText || extrahierterText.trim().length === 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Aus dieser PDF konnte kein Text extrahiert werden (möglicherweise nur ein Scan/Bild).",
+        },
+        { status: 422 },
+      );
+    }
+
     return NextResponse.json({
       success: true,
       originalName: file.name,
       gespeichertAls: dateiname,
       groesseInBytes: buffer.length,
+      anzahlZeichen: extrahierterText.length,
     });
   } catch (error: unknown) {
     console.error("[Upload] Fehler:", error);
