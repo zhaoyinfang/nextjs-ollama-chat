@@ -51,7 +51,7 @@ async function embedFrage(frage: string): Promise<number[]> {
   return data.embedding as number[];
 }
 
-function findeAehnlicheFakten(frageEmbedding: number[], k = 3): string[] {
+function findeAehnlicheFakten(frageEmbedding: number[], k = 6): string[] {
   const vektoren = ladeVektoren();
   if (vektoren.length === 0) return [];
 
